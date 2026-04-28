@@ -1,0 +1,8 @@
+{
+  "name": "nox-splitter-iapp",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "dependencies": {
+    "iexec": "^8.0.0"
+  }
+}

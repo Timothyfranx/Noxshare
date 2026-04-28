@@ -1,0 +1,9 @@
+node_modules
+.env
+artifacts
+cache
+frontend/.next
+frontend/node_modules
+out
+.DS_Store
+*.log
