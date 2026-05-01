@@ -11,7 +11,7 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
-  const { connect } = useConnect();
+  const { connect, connectors } = useConnect();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -37,7 +37,10 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
         <div className="navbar-nav">
           {!isConnected ? (
             <button 
-              onClick={() => connect({ connector: injected() })} 
+              onClick={() => {
+                const conn = connectors.find(c => c.id === 'injected') || connectors[0];
+                if (conn) connect({ connector: conn });
+              }} 
               className="btn-primary btn-sm"
             >
               Connect Wallet

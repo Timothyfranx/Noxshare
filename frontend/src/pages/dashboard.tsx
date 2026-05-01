@@ -77,13 +77,17 @@ const NOX_CONFIG = {};
 
 export default function Dashboard() {
   const { address, isConnected, chainId } = useAccount();
-  const { connect } = useConnect();
+  const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain } = useSwitchChain();
-  const { data: connectorClient } = useConnectorClient();
+  const { data: connectorClient, isLoading: isClientLoading } = useConnectorClient();
   const { writeContractAsync } = useWriteContract();
 
   const isOwner = address?.toLowerCase() === OWNER_ADDRESS.toLowerCase();
+
+  useEffect(() => {
+    console.log("Connection State:", { isConnected, address, chainId, isClientLoading, hasClient: !!connectorClient });
+  }, [isConnected, address, chainId, isClientLoading, connectorClient]);
 
   const [isPrivate, setIsPrivate] = useState(true);
   const [decryptedBalance, setDecryptedBalance] = useState<string>("0");
@@ -141,9 +145,18 @@ export default function Dashboard() {
   }, [auctionStatus]);
 
   const handleReveal = async () => {
-    if (!isConnected || !connectorClient) {
+    if (!isConnected) {
       toast.error("Please connect your wallet first");
-      connect({ connector: injected() });
+      if (connectors?.[0]) connect({ connector: connectors[0] });
+      return;
+    }
+
+    if (!connectorClient) {
+      if (isClientLoading) {
+        toast.loading("Waiting for wallet client...");
+      } else {
+        toast.error("Wallet client not found. Please try refreshing.");
+      }
       return;
     }
 
@@ -226,9 +239,14 @@ export default function Dashboard() {
   };
 
   const handleJoinDemo = async () => {
-    if (!isConnected || !connectorClient) {
+    if (!isConnected) {
       toast.error("Please connect your wallet first");
-      connect({ connector: injected() });
+      if (connectors?.[0]) connect({ connector: connectors[0] });
+      return;
+    }
+
+    if (!connectorClient) {
+      toast.error("Wallet client not found. Please wait a moment.");
       return;
     }
 
@@ -266,9 +284,14 @@ export default function Dashboard() {
   };
 
   const handlePlaceBid = async () => {
-    if (!isConnected || !connectorClient) {
+    if (!isConnected) {
       toast.error("Please connect your wallet first");
-      connect({ connector: injected() });
+      if (connectors?.[0]) connect({ connector: connectors[0] });
+      return;
+    }
+
+    if (!connectorClient) {
+      toast.error("Wallet client not found. Please wait a moment.");
       return;
     }
 
@@ -337,8 +360,14 @@ export default function Dashboard() {
   };
 
   const handleTriggerSplitter = async () => {
-    if (!isConnected || !connectorClient) {
+    if (!isConnected) {
       toast.error("Please connect your wallet first");
+      if (connectors?.[0]) connect({ connector: connectors[0] });
+      return;
+    }
+
+    if (!connectorClient) {
+      toast.error("Wallet client not found. Please try disconnecting and reconnecting.");
       return;
     }
 
@@ -424,9 +453,18 @@ export default function Dashboard() {
           <p className="connect-message">
             Connect your wallet to view your portfolio and participate in auctions
           </p>
-          <button className="btn-primary" onClick={() => connect({ connector: injected() })}>
-            Connect Wallet
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <button 
+              className="btn-primary" 
+              onClick={() => {
+                const conn = connectors.find(c => c.id === 'injected') || connectors[0];
+                if (conn) connect({ connector: conn });
+              }}
+            >
+              Connect Wallet
+            </button>
+          </div>
+
         </div>
       </>
     );
