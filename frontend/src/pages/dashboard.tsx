@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useAccount, useReadContract, useWriteContract, useConnectorClient, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
+import { simulateContract } from '@wagmi/core';
+import { config } from '../lib/wagmi';
 import { injected } from 'wagmi/connectors';
 import { createViemHandleClient } from '@iexec-nox/handle';
 import { walletActions } from 'viem';
@@ -47,18 +49,18 @@ const NOX_SHARE_ABI = [
     outputs: [],
   },
   {
-    name: 'triggerSplitter',
+    name: 'requestYieldCycle',
     type: 'function',
     stateMutability: 'nonpayable',
     inputs: [
-      { name: 'encryptedAmount', type: 'bytes32' },
-      { name: 'proof', type: 'bytes' }
+      { name: 'revenueAmount', type: 'uint256' }
     ],
     outputs: [],
   }
 ] as const;
 
-const NOX_SHARE_ADDRESS = '0x6a97f480b676c94242df02b87535eda7cc8ec5a0';
+const NOX_SHARE_ADDRESS = '0x1d5b629b0575631bbe10e29552e6bd9be11ce9e6';
+const OWNER_ADDRESS = '0xBDB82a3905a3B22B32885Bad996cbc9917436534';
 
 // Minimal Nox Config - SDK auto-detects defaults for Arbitrum Sepolia
 const NOX_CONFIG = {};
@@ -71,6 +73,8 @@ export default function Dashboard() {
   const { data: connectorClient } = useConnectorClient();
   const { writeContractAsync } = useWriteContract();
 
+  const isOwner = address?.toLowerCase() === OWNER_ADDRESS.toLowerCase();
+
   const [isPrivate, setIsPrivate] = useState(true);
   const [decryptedBalance, setDecryptedBalance] = useState<string>("0");
   const [decryptedDividends, setDecryptedDividends] = useState<string>("0");
@@ -82,6 +86,8 @@ export default function Dashboard() {
   const [revenueAmount, setRevenueAmount] = useState("");
   const [taskId, setTaskId] = useState<string | null>(null);
   const [taskStatus, setTaskStatus] = useState<'idle' | 'pending' | 'completed'>('idle');
+  const [isStartingAuction, setIsStartingAuction] = useState(false);
+  const [auctionDuration, setAuctionDuration] = useState("300");
 
   // 1. Read the encrypted share handle
   const { data: shareHandle } = useReadContract({
@@ -139,13 +145,31 @@ export default function Dashboard() {
         const client = await createViemHandleClient(fullClient, NOX_CONFIG);
 
         if (shareHandle && shareHandle !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-          const res = await client.decrypt(shareHandle as string);
-          setDecryptedBalance(res.data);
+          try {
+            const res = await client.decrypt(shareHandle as string);
+            setDecryptedBalance(res.data);
+          } catch (decErr: any) {
+            console.error("Share decryption failed", decErr);
+            if (decErr.message?.includes('does not exist') || decErr.message?.includes('not authorized')) {
+              toast.error("This share handle was created before the latest deployment. Please mint a new share.");
+            } else {
+              throw decErr;
+            }
+          }
         }
 
         if (dividendHandle && dividendHandle !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-          const res = await client.decrypt(dividendHandle as string);
-          setDecryptedDividends(res.data);
+          try {
+            const res = await client.decrypt(dividendHandle as string);
+            setDecryptedDividends(res.data);
+          } catch (decErr: any) {
+            console.error("Dividend decryption failed", decErr);
+            if (decErr.message?.includes('does not exist') || decErr.message?.includes('not authorized')) {
+              toast.error("This dividend handle is invalid for the current deployment.");
+            } else {
+              throw decErr;
+            }
+          }
         }
 
         setIsPrivate(false);
@@ -158,6 +182,31 @@ export default function Dashboard() {
       }
     } else {
       setIsPrivate(true);
+    }
+  };
+
+  const handleStartAuction = async () => {
+    if (!isOwner || !isConnected) return;
+    
+    setIsStartingAuction(true);
+    try {
+      const pendingToast = toast.loading("Starting auction...");
+      
+      const tx = await writeContractAsync({
+        address: NOX_SHARE_ADDRESS,
+        abi: NOX_SHARE_ABI,
+        functionName: 'startAuction' as any,
+        args: [BigInt(auctionDuration)],
+      });
+      
+      toast.dismiss(pendingToast);
+      toast.success("Auction started!");
+      refetchAuction();
+    } catch (err) {
+      console.error("Start auction failed", err);
+      toast.error(`Start auction failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsStartingAuction(false);
     }
   };
 
@@ -193,6 +242,22 @@ export default function Dashboard() {
       console.log("Submitting Bid with Handle:", handle);
 
       const pendingToast = toast.loading("Submitting bid...");
+
+      try {
+        await simulateContract(config, {
+          address: NOX_SHARE_ADDRESS,
+          abi: NOX_SHARE_ABI,
+          functionName: 'submitBid',
+          args: [handle as `0x${string}`, handleProof as `0x${string}`],
+          account: address,
+        });
+      } catch (err) {
+        console.error('Simulation failed for submitBid:', err);
+        toast.dismiss(pendingToast);
+        toast.error(`Simulation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        setIsBidding(false);
+        return;
+      }
 
       const tx = await writeContractAsync({
         address: NOX_SHARE_ADDRESS,
@@ -235,24 +300,30 @@ export default function Dashboard() {
     setIsTriggering(true);
     setTaskStatus('pending');
     try {
-      const fullClient = (connectorClient as any).extend(walletActions);
-      const client = await createViemHandleClient(fullClient, NOX_CONFIG);
-
-      const { handle, handleProof } = await (client as any).encryptInput(
-        BigInt(revenueAmount),
-        'uint256',
-        NOX_SHARE_ADDRESS
-      );
-
       const pendingToast = toast.loading("Triggering NoxSplitter...");
 
-      // Note: This assumes a triggerSplitter function exists on the contract
-      // Adjust if the actual function name differs
+      try {
+        await simulateContract(config, {
+          address: NOX_SHARE_ADDRESS,
+          abi: NOX_SHARE_ABI,
+          functionName: 'requestYieldCycle',
+          args: [BigInt(revenueAmount)],
+          account: address,
+        });
+      } catch (err) {
+        console.error('Simulation failed for requestYieldCycle:', err);
+        toast.dismiss(pendingToast);
+        toast.error(`Simulation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        setIsTriggering(false);
+        setTaskStatus('idle');
+        return;
+      }
+
       const tx = await writeContractAsync({
         address: NOX_SHARE_ADDRESS,
         abi: NOX_SHARE_ABI,
-        functionName: 'triggerSplitter' as any,
-        args: [handle as `0x${string}`, handleProof as `0x${string}`],
+        functionName: 'requestYieldCycle',
+        args: [BigInt(revenueAmount)],
       });
 
       toast.dismiss(pendingToast);
@@ -313,7 +384,25 @@ export default function Dashboard() {
       </Head>
       <Navbar variant="dashboard" />
       <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', marginBottom: '2rem', paddingTop: '1rem' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1rem' }}>
+          {isOwner && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input 
+                type="number" 
+                value={auctionDuration} 
+                onChange={(e) => setAuctionDuration(e.target.value)}
+                style={{ width: '80px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+              />
+              <button 
+                onClick={handleStartAuction} 
+                disabled={isStartingAuction || isAuctionActive}
+                className="btn-primary btn-sm"
+                style={{ fontSize: '0.75rem' }}
+              >
+                {isStartingAuction ? 'Starting...' : 'Start Auction (sec)'}
+              </button>
+            </div>
+          )}
           <span className="network-badge">
             ⚠️ Arbitrum Sepolia Testnet
           </span>

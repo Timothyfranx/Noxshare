@@ -6,14 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import '../styles/globals.css';
 
-const config = createConfig({
-  chains: [arbitrumSepolia, sepolia, mainnet],
-  transports: {
-    [arbitrumSepolia.id]: http(),
-    [sepolia.id]: http(),
-    [mainnet.id]: http(),
-  },
-});
+import { config } from '../lib/wagmi';
 
 const queryClient = new QueryClient();
 
