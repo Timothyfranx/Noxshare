@@ -1,0 +1,24 @@
+{
+  "description": "NoxSplitter iApp: A confidential yield distribution engine built with iExec Nox Protocol and TEE (Intel TDX). It calculates private dividends for real estate fractional ownership without revealing individual shares or revenue details on-chain. Part of the Hack4Privacy hackathon.",
+  "license": "MIT",
+  "author": "NoxShare Team",
+  "social": {
+    "website": "https://noxshare.com",
+    "github": "https://github.com/noxshare"
+  },
+  "logo": "logo.png",
+  "buyConf": {},
+  "app": {
+    "owner": "0xBDB82a3905a3B22B32885Bad996cbc9917436534",
+    "name": "NoxSplitter",
+    "type": "DOCKER",
+    "multiaddr": "docker.io/replytim101/noxsplitter:latest",
+    "checksum": "0x7945ca146d18e90e462cefb2f19dae6119f83e9d159b1c980dcf90bc65ea3f95"
+  },
+  "dataset": {
+    "owner": "0xBDB82a3905a3B22B32885Bad996cbc9917436534",
+    "name": "NoxSplitterShares",
+    "multiaddr": "/ipfs/QmW2WQi7j6c7UgJTarActp7tDNikE4B2qXtFCfLPdsgaTQ",
+    "checksum": "0xb834a791e02f3ca4d9a9e599f07036993c61d27ef9502ab6dbcb60540e784ddb"
+  }
+}

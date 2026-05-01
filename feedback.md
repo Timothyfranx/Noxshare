@@ -11,8 +11,12 @@
 - **Suggested improvements:** Official support/templates for Hardhat 3 and ESM-based projects would help developers stay on the cutting edge of the Ethereum tooling stack.
 
 ## DataProtector
-- **Experience using it for protected shares data:** Using DataProtector to secure the `shares.json` file for the TEE was a highlight. It provides a clear legal and technical bridge for RWA (Real World Asset) compliance.
-- **Documentation quality:** Very high. The flow from "Protecting Data" to "Granting Access" to the TEE iApp is the most documented and easiest part of the stack to grasp.
+- **Experience:** While we initially explored DataProtector for TEE integration, we pivoted to an entirely on-chain architecture using Nox encrypted arithmetic. This allowed us to maintain privacy without the complexity of off-chain task management, which we found to be a powerful alternative for confidential RWA yield splitting.
+
+## @iexec-nox/handle package
+- **Experience:** The `@iexec-nox/handle` package is a standout. The `encryptInput` helper simplifies the complex proof-generation process into a single line of frontend code. 
+- **Feedback:** We encountered some DNS resolution issues with the handle gateway on Arbitrum Sepolia, but the support from the iExec team (Mathis) was exceptional in clarifying that the SDK handles auto-resolution of the gateway URL based on the chain ID.
+- **Suggestion:** Explicitly documenting the auto-resolution feature in the main Nox documentation would prevent developers from hunting for gateway URLs manually.
 
 ## Overall
 - **Would you use iExec again? Why?** Absolutely. Nox is the first protocol that makes "Confidential DeFi" feel like normal web development. It solves the "Public by Default" problem of the blockchain without requiring developers to become Zero-Knowledge researchers.

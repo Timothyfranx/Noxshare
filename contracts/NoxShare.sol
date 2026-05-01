@@ -5,7 +5,7 @@ import {Nox, euint256, externalEuint256, ebool} from "@iexec-nox/nox-protocol-co
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 interface INoxShareToken {
-    function mint(address to, externalEuint256 amount, bytes calldata proof) external;
+    function mintWithHandle(address to, bytes32 handle) external;
     function balanceOf(address account) external view returns (bytes32);
 }
 
@@ -17,7 +17,7 @@ interface INoxShareToken {
 contract NoxShare is Ownable {
     
     // iExec PoCo address on Arbitrum Sepolia
-    address public constant IEXEC_POCO = 0x3aEc1855869991b928113756E0586a5d7047bf18;
+    address public constant IEXEC_POCO = 0xB2157BF2fAb286b2A4170E3491Ac39770111Da3E;
 
     // Total supply of micro-shares (1,000,000 = 100.0000%)
     uint256 public constant TOTAL_SHARES = 1000000;
@@ -56,9 +56,19 @@ contract NoxShare is Ownable {
 
     /**
      * @dev Mints shares to an investor via the shareToken.
+     * The main contract validates the input and then passes the handle to the token contract.
      */
     function mintShare(address investor, externalEuint256 encryptedAmount, bytes calldata proof) public onlyOwner {
-        shareToken.mint(investor, encryptedAmount, proof);
+        // 1. Validate and wrap the external input
+        // Since Wallet calls this, owner in proof must be Wallet, and app in proof must be NoxShare
+        euint256 amountHandle = Nox.fromExternal(encryptedAmount, proof);
+        
+        // 2. Grant the shareToken contract permission to use this handle
+        Nox.allow(amountHandle, address(shareToken));
+        
+        // 3. Call the token contract to perform the mint
+        shareToken.mintWithHandle(investor, euint256.unwrap(amountHandle));
+        
         bytes32 handle = shareToken.balanceOf(investor);
         emit ShareMinted(investor, handle);
     }

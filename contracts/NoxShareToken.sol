@@ -21,6 +21,19 @@ contract NoxShareToken is Ownable {
     constructor() Ownable(msg.sender) {}
 
     /**
+     * @dev Mints confidential tokens to an account using a pre-validated handle.
+     * Only the owner (NoxShare contract) can call this.
+     */
+    function mintWithHandle(address to, bytes32 amountHandle) external onlyOwner {
+        euint256 currentBalance = euint256.wrap(_balances[to]);
+        
+        // We assume the caller (NoxShare) has already called Nox.allow(amountHandle, address(this))
+        _balances[to] = euint256.unwrap(Nox.add(currentBalance, euint256.wrap(amountHandle)));
+        
+        emit Transfer(address(0), to, amountHandle);
+    }
+
+    /**
      * @dev Mints confidential tokens to an account.
      */
     function mint(address to, externalEuint256 amount, bytes calldata proof) external onlyOwner {

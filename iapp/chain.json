@@ -1,0 +1,9 @@
+{
+  "default": "arbitrum-sepolia-testnet",
+  "chains": {
+    "arbitrum-sepolia-testnet": {
+      "id": "421614",
+      "host": "https://sepolia-rollup.arbitrum.io/rpc"
+    }
+  }
+}

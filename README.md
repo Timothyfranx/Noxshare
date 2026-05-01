@@ -44,8 +44,8 @@ npm start
 
 ## 🔒 Confidentiality Features (No Mock Data)
 - **ERC-7984 Integration:** Balances are stored as `bytes32` handles on-chain.
-- **Sealed-Bid Auctions:** Bids are compared inside the TEE using `nox.gt()`.
-- **Private Yield Splitter:** Dividends are calculated confidentially using `nox.mul()` and `nox.div()`.
+- **Sealed-Bid Auctions:** Bids are compared using `nox.gt()` on-chain.
+- **Private Yield Splitter:** Dividends are calculated confidentially using `nox.mul()` and `nox.div()` entirely within the smart contract — no off-chain compute required.
 
 ## 📄 Feedback
 Feedback for the iExec team can be found in `feedback.md`.
