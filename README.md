@@ -8,9 +8,9 @@ Built for the **iExec Vibe Coding Challenge**. NoxShare enables confidential fra
 
 ## 🛠 Tech Stack
 - **Blockchain:** Arbitrum Sepolia
-- **Privacy:** iExec Nox (TEE + Confidential Tokens ERC-7984)
-- **AI:** ChainGPT (Yield Prediction & Compliance)
-- **Frontend:** React + Wagmi + Viem
+- **Privacy:** iExec Nox Protocol (Confidential Tokens ERC-7984)
+- **Arithmetic:** On-chain Encrypted Comparison and Calculation (Nox handles)
+- **Frontend:** Next.js + Wagmi + Viem
 
 ## 📂 Project Structure
 - `/contracts`: Core NoxShare smart contracts using iExec SDK.
