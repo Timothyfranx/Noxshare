@@ -527,8 +527,10 @@ export default function Dashboard() {
 
             <div className="yield-content">
               <div className="yield-row">
-                <span className="yield-label">Last Harvest</span>
-                <span className="yield-value">$10,000 revenue</span>
+                <span className="yield-label">Yield Status</span>
+                <span className="yield-value">
+                  {decryptedDividends && Number(decryptedDividends) > 0 ? 'Dividend Available' : 'No Dividend Pending'}
+                </span>
               </div>
               <div className="yield-row">
                 <span className="yield-label">Your Dividend</span>
@@ -573,7 +575,7 @@ export default function Dashboard() {
 
               {taskId && (
                 <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                  Task ID:{' '}
+                  Transaction:{' '}
                   <a
                     href={`https://sepolia.arbiscan.io/tx/${taskId}`}
                     target="_blank"
@@ -582,9 +584,6 @@ export default function Dashboard() {
                   >
                     {taskId.slice(0, 10)}...{taskId.slice(-8)}
                   </a>
-                  {taskStatus === 'completed' && (
-                    <span style={{ color: 'var(--success)', marginLeft: '0.5rem' }}>✓ COMPLETED</span>
-                  )}
                 </div>
               )}
             </div>
@@ -601,7 +600,7 @@ export default function Dashboard() {
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                    {isAuctionActive ? 'Q3 Harvest Cycle - Bidding Live' : 'No Active Auction'}
+                    {isAuctionActive ? 'Confidential Harvest Cycle - Bidding Live' : 'No Active Auction'}
                   </p>
                   {isAuctionActive && (
                     <div style={{ color: 'var(--accent-gold)', fontSize: '1.25rem', fontWeight: '700' }}>
@@ -620,7 +619,7 @@ export default function Dashboard() {
               </div>
 
               <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-                Secure your bid for the Q3 Harvest Cycle. All bids are encrypted via Nox KMS and compared inside a TEE enclave.
+                Secure your bid for the Harvest Cycle. All bids are encrypted via Nox KMS and compared on-chain using Nox encrypted arithmetic.
               </p>
               <button
                 className="btn-primary"
@@ -644,7 +643,7 @@ export default function Dashboard() {
               </div>
               <div className="auction-detail">
                 <span className="auction-label">ENCLAVE</span>
-                <span className="auction-value">INTEL TDX</span>
+                <span className="auction-value">NOX ON-CHAIN</span>
               </div>
               <div className="auction-detail">
                 <span className="auction-label">PROTOCOL</span>
