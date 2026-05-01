@@ -33,12 +33,12 @@ async function main() {
   console.log("Wallet:", account.address);
 
   // 1. Start a fresh auction (10 minute duration for demo)
-  console.log("1. Starting Auction (600s)...");
+  console.log("1. Starting Auction (24 hours)...");
   const startTx = await walletClient.writeContract({
     address: noxShareAddress,
     abi: noxShareArtifact.abi,
     functionName: "startAuction",
-    args: [600n]
+    args: [86400n]
   });
   await publicClient.waitForTransactionReceipt({ hash: startTx });
   console.log("Auction started! TX:", startTx);

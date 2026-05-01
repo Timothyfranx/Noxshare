@@ -141,7 +141,11 @@ export default function Dashboard() {
   }, [auctionStatus]);
 
   const handleReveal = async () => {
-    if (!connectorClient) return;
+    if (!isConnected || !connectorClient) {
+      toast.error("Please connect your wallet first");
+      connect({ connector: injected() });
+      return;
+    }
 
     if (chainId !== arbitrumSepolia.id) {
       toast.error("Please switch to Arbitrum Sepolia network");
@@ -224,6 +228,7 @@ export default function Dashboard() {
   const handleJoinDemo = async () => {
     if (!isConnected || !connectorClient) {
       toast.error("Please connect your wallet first");
+      connect({ connector: injected() });
       return;
     }
 
@@ -263,6 +268,7 @@ export default function Dashboard() {
   const handlePlaceBid = async () => {
     if (!isConnected || !connectorClient) {
       toast.error("Please connect your wallet first");
+      connect({ connector: injected() });
       return;
     }
 
