@@ -73,6 +73,16 @@ contract NoxShare is Ownable {
         emit ShareMinted(investor, handle);
     }
 
+    /**
+     * @dev Public mint for demo purposes. Anyone can mint test shares to themselves.
+     */
+    function demoMint(externalEuint256 encryptedAmount, bytes calldata proof) public {
+        euint256 amountHandle = Nox.fromExternal(encryptedAmount, proof);
+        Nox.allow(amountHandle, address(shareToken));
+        shareToken.mintWithHandle(msg.sender, euint256.unwrap(amountHandle));
+        emit ShareMinted(msg.sender, shareToken.balanceOf(msg.sender));
+    }
+
     // ─── START AUCTION ───────────────────────────────────────────
     function startAuction(uint256 durationSeconds) external onlyOwner {
         require(currentAuction.settled || currentAuction.endTime == 0, "Auction still active");

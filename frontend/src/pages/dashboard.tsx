@@ -56,10 +56,20 @@ const NOX_SHARE_ABI = [
       { name: 'revenueAmount', type: 'uint256' }
     ],
     outputs: [],
+  },
+  {
+    name: 'demoMint',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'encryptedAmount', type: 'bytes32' },
+      { name: 'proof', type: 'bytes' }
+    ],
+    outputs: [],
   }
 ] as const;
 
-const NOX_SHARE_ADDRESS = '0x1d5b629b0575631bbe10e29552e6bd9be11ce9e6';
+const NOX_SHARE_ADDRESS = '0x71c1b1977c3752836be5a093fcb6dafe417de941';
 const OWNER_ADDRESS = '0xBDB82a3905a3B22B32885Bad996cbc9917436534';
 
 // Minimal Nox Config - SDK auto-detects defaults for Arbitrum Sepolia
@@ -88,6 +98,7 @@ export default function Dashboard() {
   const [taskStatus, setTaskStatus] = useState<'idle' | 'pending' | 'completed'>('idle');
   const [isStartingAuction, setIsStartingAuction] = useState(false);
   const [auctionDuration, setAuctionDuration] = useState("300");
+  const [isJoiningDemo, setIsJoiningDemo] = useState(false);
 
   // 1. Read the encrypted share handle
   const { data: shareHandle } = useReadContract({
@@ -207,6 +218,45 @@ export default function Dashboard() {
       toast.error(`Start auction failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsStartingAuction(false);
+    }
+  };
+
+  const handleJoinDemo = async () => {
+    if (!isConnected || !connectorClient) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    setIsJoiningDemo(true);
+    try {
+      const fullClient = (connectorClient as any).extend(walletActions);
+      const client = await createViemHandleClient(fullClient, NOX_CONFIG);
+
+      // Encrypted amount of 1000 for the demo mint
+      const { handle, handleProof } = await (client as any).encryptInput(
+        BigInt(1000),
+        'uint256',
+        NOX_SHARE_ADDRESS
+      );
+
+      const pendingToast = toast.loading("Minting demo shares...");
+
+      const tx = await writeContractAsync({
+        address: NOX_SHARE_ADDRESS,
+        abi: NOX_SHARE_ABI,
+        functionName: 'demoMint',
+        args: [handle as `0x${string}`, handleProof as `0x${string}`],
+      });
+
+      toast.dismiss(pendingToast);
+      toast.success(
+        <span>Shares minted! · <a href={`https://sepolia.arbiscan.io/tx/${tx}`} target="_blank" rel="noopener noreferrer">View on Arbiscan</a></span>
+      );
+    } catch (err) {
+      console.error("Demo mint failed", err);
+      toast.error(`Demo mint failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsJoiningDemo(false);
     }
   };
 
@@ -464,6 +514,15 @@ export default function Dashboard() {
                   Hide Balance
                 </>
               )}
+            </button>
+
+            <button 
+              onClick={handleJoinDemo} 
+              className="btn-primary" 
+              style={{ width: '100%', marginTop: '1rem', fontSize: '0.75rem', padding: '0.5rem' }}
+              disabled={isJoiningDemo}
+            >
+              {isJoiningDemo ? 'Minting...' : '🎁 Join Demo (Get 1000 NOXPG)'}
             </button>
           </div>
 

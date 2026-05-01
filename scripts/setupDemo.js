@@ -25,7 +25,7 @@ async function main() {
     transport: http(rpcUrl)
   });
 
-  const noxShareAddress = "0x1d5b629b0575631bbe10e29552e6bd9be11ce9e6";
+  const noxShareAddress = "0x71c1b1977c3752836be5a093fcb6dafe417de941";
   const noxShareArtifact = JSON.parse(fs.readFileSync(path.resolve("artifacts/contracts/NoxShare.sol/NoxShare.json"), "utf8"));
   const noxClient = await createViemHandleClient(walletClient);
 
